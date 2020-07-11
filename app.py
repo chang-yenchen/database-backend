@@ -10,6 +10,8 @@ import csv
 import pandas as pd
 import json
 
+# id generator for the songs added by users
+new_id = 0
 
 # Create Flask app
 app = Flask(__name__)
@@ -217,22 +219,39 @@ def searchByGenre():
             keyword = 'danceability'
             query = "SELECT songname, artistname, {kwd} FROM song_att, song_info WHERE song_att.id = song_info.id ORDER BY {kwd} DESC LIMIT 10;".format(kwd = keyword)
 
-        #not done yet
-        if(values.get('atmos') == 'relax'):
-            keyword = 'bossa nova'
-            query = "SELECT genre, energy, danceability, tempo, valence, acousticness FROM genre_info WHERE genre = {};".format(keyword)
-            for row in c.execute(query):
-                enrgy = row[1]
-                dance = row[2]
-                tempo = row[3]
-                val = row[4]
-                acous = row[5]
-            query = "SELECT songname, artistname FROM song_att, song_info WHERE song_att.id = song_info.id ORDER BY {kwd} DESC LIMIT 10;"
-
-
         for row in c.execute(query):
             song = {}
             song.update({'songname': row[0], 'artistname': row[1], keyword: row[2]})
+            list.append(song)
+        return jsonify(list)
+
+@app.route('/add', methods=['GET', 'POST'])
+def addSong():
+    values = get_request_value(request)
+    if values.get('song') == None:
+        return error('Empty Field!')
+    else:
+        list = []
+        song = values.get('song')
+        
+        global new_id
+        new_id += 1
+        id = str(new_id)
+
+        c = get_db().cursor()
+        
+        if values.get('artist') != None:
+            artist = values.get('artist')
+            c.execute("INSERT INTO song_info(id, songname, artistname) VALUES ('{id}', '{song}', '{artist}')".format(id = id, song = song, artist = artist))
+        else:
+            c.execute("INSERT INTO song_info(id, songname) VALUES ('{id}', '{song}')".format(id = id, song = song))
+
+        get_db().commit()
+
+        query = "SELECT id, songname, artistname FROM song_info WHERE id = {};".format(id)
+        for row in c.execute(query):
+            song = {}
+            song.update({'id': row[0], 'songname': row[1], 'artistname': row[2]})
             list.append(song)
         return jsonify(list)
 
