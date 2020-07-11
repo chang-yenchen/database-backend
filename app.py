@@ -9,9 +9,7 @@ import sqlite3
 import csv
 import pandas as pd
 import json
-
-# id generator for the songs added by users
-new_id = 0
+import time
 
 # Create Flask app
 app = Flask(__name__)
@@ -234,9 +232,7 @@ def addSong():
         list = []
         song = values.get('song')
         
-        global new_id
-        new_id += 1
-        id = str(new_id)
+        id = str(time.time())
 
         c = get_db().cursor()
         
